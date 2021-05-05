@@ -15,13 +15,16 @@ module.exports = async (env, options) => {
   const buildType = dev ? "dev" : "prod";
   const config = {
     devtool: "source-map",
+    node: {
+      fs: "empty"
+    },
     entry: {
       polyfill: ["core-js/stable", "regenerator-runtime/runtime"],
       taskpane: "./src/taskpane/taskpane.js",
       commands: "./src/commands/commands.js"
     },
     resolve: {
-      extensions: [".ts", ".tsx", ".html", ".js"]
+      extensions: [".ts", ".tsx", ".html", ".js", ".json"]
     },
     module: {
       rules: [
@@ -61,6 +64,10 @@ module.exports = async (env, options) => {
         {
           to: "taskpane.css",
           from: "./src/taskpane/taskpane.css"
+        },
+        {
+          to: "patterns.json",
+          from: "./src/taskpane/patterns.json"
         },
         {
           to: "[name]." + buildType + ".[ext]",

@@ -1,0 +1,23 @@
+{
+    "patterns": [
+        {
+            "Perioada solicitata / The requested period : {email} dadada {interval}{newLine}{user}": {
+                "description": "Cerere invoire",
+                "requests": [
+                    {
+                        "url": "https://localhost:3000/link.html",
+                        "type": "GET",
+                        "params": [
+                            "name=test",
+                            "request0parampassword",
+                            "request0bodypassword"
+                        ]
+                    }
+                ]
+            },
+            "{user}" : {
+                "description": "Test Pattern"
+            }
+        }
+    ]
+}
