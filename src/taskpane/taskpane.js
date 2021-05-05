@@ -80,13 +80,12 @@ function bodyContains(bodyContent, regexString) {
     indexes.push(regexString.indexOf(foundField) - 1);
     return regexMap[foundField].source;
   });
-  console.log(finalRegex);
 
   var returnFields = [];
   let temp = bodyContent.match(finalRegex);
-  if(!temp)
+  if (!temp)
     return null;
-  
+
   var match = temp[0];
   // Each field's index will change based on the length of the found string `tempMatch`.
   var toAdd = 0;
@@ -96,10 +95,10 @@ function bodyContains(bodyContent, regexString) {
     var subMatch = match.substring(indexes[0]);
     indexes.shift();
     var tempMatch = subMatch.match(regexMap[entry]);
-    if(tempMatch != null) {
+    if (tempMatch != null) {
       var fullMatch = tempMatch[0];
       toAdd += fullMatch.length - entry.length;
-      returnFields.push({key:entry, value:fullMatch});
+      returnFields.push({ key: entry, value: fullMatch });
     }
   });
   return returnFields;
@@ -155,17 +154,17 @@ function runUrlPath(startingRequest, requestPath) {
     });
 }
 
-var requestPaths = {
-  "Cerere": [
-    new Request("https://localhost:3000/link.html", "GET", {
-      "name": "test",
-      "password": "bop"
-    }),
-    new Request("https://localhost:3000/link.html", "GET", {
-      "password": "test"
-    })
-  ]
-}
+// var requestPaths = {
+//   "Cerere": [
+//     new Request("https://localhost:3000/link.html", "GET", {
+//       "name": "test",
+//       "password": "bop"
+//     }),
+//     new Request("https://localhost:3000/link.html", "GET", {
+//       "password": "test"
+//     })
+//   ]
+// }
 
 // Structure that stores email patterns 
 var emailPatterns = {
@@ -188,12 +187,36 @@ var emailPatterns = {
 // e.g. `fieldDictionary = [ { key:{field}, value:{fieldValue}]`
 function getFieldValue(fieldDictionary, key) {
   let values = []
-  fieldDictionary.forEach(function(element) {
-    if(element['key'] == key) {
+  fieldDictionary.forEach(function (element) {
+    if (element['key'] == key) {
       values.push(element['value'])
     }
   });
   return values;
+}
+
+let requestPaths = []
+
+function followRequestPath(startingRequest) {
+  // if(settings.isenabled follow programatically)
+  let requestID = this.id;
+  let requests = requestPaths[requestID].requests;
+  console.log(typeof(requests));
+  requests.forEach(function(request) {
+    // Send request
+    console.log(request);
+  })
+}
+
+function makeid(length) {
+  var result = [];
+  var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  var charactersLength = characters.length;
+  for (var i = 0; i < length; i++) {
+    result.push(characters.charAt(Math.floor(Math.random() *
+      charactersLength)));
+  }
+  return result.join('');
 }
 
 export async function run() {
@@ -208,48 +231,53 @@ export async function run() {
       var content = asyncResult.value.trim();
       document.getElementById("item-body").innerHTML = "<b>Body:</b> <br/>" + content;
       var contentTest = "Perioada solicitata / The requested period : test@test.com dadada test@test2.com";
-      
+
       // Loop through each email template.
       for (const [key, value] of Object.entries(patterns.patterns[0])) {
         var returnedFields = bodyContains(contentTest, key);
         if (returnedFields != null) {
           var htmlContent = "<b>Fields:</b> <br/>";
-          returnedFields.forEach(function(element) {
-            htmlContent += '- ' + element['key'] + ' : ' + element['value']  + "<br/>";
+          returnedFields.forEach(function (element) {
+            htmlContent += '- ' + element['key'] + ' : ' + element['value'] + "<br/>";
           })
           document.getElementById("item-test").innerHTML = htmlContent;
           document.getElementById("title").innerText = value.description;
           item.notificationMessages.addAsync("Info", {
             type: "informationalMessage",
-            message : "Email pattern found: " + value.description,
-            icon : "iconid",
+            message: "Email pattern found: " + value.description,
+            icon: "iconid",
             persistent: false
           })
           // Check if email pattern has a regex defined for URLs.
-          if(value.actions != null) {
+          if (value.actions != null) {
             var simulateUrl = "Pentru APROBARE accesati link-ul / For APPROVAL access the link :\nhttps://google.com ";
             // Action URLs defined in the email pattern.
             let urls;
+            var urlContent = "<b>Actions:</b> <br/>";
             for (const [actionRegex, requestArray] of Object.entries(value.actions[0])) {
               urls = getFieldValue(bodyContains(simulateUrl, actionRegex), '{url}');
+              urls.forEach(function (url) {
+                // Generate a string that can be used to identify request paths for each URL found in the body.
+                var pathIdentification = makeid(10);
+                urlContent += '<div id=' + pathIdentification  + '> - ' + url + "</div> <br/>";
+                document.getElementById("item-actions").innerHTML = urlContent;
+                document.getElementById(pathIdentification).addEventListener("click", followRequestPath, false);
+                requestPaths[pathIdentification] = requestArray;
+                console.log(requestPaths);
+              })
             }
-            var urlContent = "<b>Actions:</b> <br/>";
-            urls.forEach(function(url) {
-              urlContent += '- ' + url + "<br/>";
-            })
-            document.getElementById("item-actions").innerHTML = urlContent;
           }
         }
       }
-      if(document.getElementById("title").innerText == 'Process Email') {
+      if (document.getElementById("title").innerText == 'Process Email') {
         item.notificationMessages.addAsync("Info", {
           type: "informationalMessage",
-          message : "No email pattern found.",
-          icon : "iconid",
+          message: "No email pattern found.",
+          icon: "iconid",
           persistent: false
         })
       }
-      
+
     }
   });
 }
