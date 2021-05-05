@@ -80,10 +80,10 @@ function bodyContains(bodyContent, regexString) {
     indexes.push(regexString.indexOf(foundField) - 1);
     return regexMap[foundField].source;
   });
+  console.log(finalRegex);
 
   var returnFields = [];
-  var temp = []
-  temp = bodyContent.match(finalRegex);
+  let temp = bodyContent.match(finalRegex);
   if(!temp)
     return null;
   
@@ -183,6 +183,19 @@ var emailPatterns = {
     ]
 }
 
+// Helper function that returns every value in the dictionary for the given key.
+// It takes as parameter a dictionary whose structure is the following:
+// e.g. `fieldDictionary = [ { key:{field}, value:{fieldValue}]`
+function getFieldValue(fieldDictionary, key) {
+  let values = []
+  fieldDictionary.forEach(function(element) {
+    if(element['key'] == key) {
+      values.push(element['value'])
+    }
+  });
+  return values;
+}
+
 export async function run() {
   // Get a reference to the current message
   var item = Office.context.mailbox.item;
@@ -194,8 +207,7 @@ export async function run() {
     } else {
       var content = asyncResult.value.trim();
       document.getElementById("item-body").innerHTML = "<b>Body:</b> <br/>" + content;
-      var contentTest = "Salut";
-      var test = "Perioada solicitata / The requested period : {email} dadada {interval}{newLine}{user}";
+      var contentTest = "Perioada solicitata / The requested period : test@test.com dadada test@test2.com";
       
       // Loop through each email template.
       for (const [key, value] of Object.entries(patterns.patterns[0])) {
@@ -213,7 +225,20 @@ export async function run() {
             icon : "iconid",
             persistent: false
           })
-          
+          // Check if email pattern has a regex defined for URLs.
+          if(value.actions != null) {
+            var simulateUrl = "Pentru APROBARE accesati link-ul / For APPROVAL access the link :\nhttps://google.com ";
+            // Action URLs defined in the email pattern.
+            let urls;
+            for (const [actionRegex, requestArray] of Object.entries(value.actions[0])) {
+              urls = getFieldValue(bodyContains(simulateUrl, actionRegex), '{url}');
+            }
+            var urlContent = "<b>Actions:</b> <br/>";
+            urls.forEach(function(url) {
+              urlContent += '- ' + url + "<br/>";
+            })
+            document.getElementById("item-actions").innerHTML = urlContent;
+          }
         }
       }
       if(document.getElementById("title").innerText == 'Process Email') {
