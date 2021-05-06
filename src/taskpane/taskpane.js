@@ -118,9 +118,9 @@ function getStatus() {
     });
 }
 
-function runUrlPath(startingRequest, requestPath) {
+function openEmbedded(url) {
   var dialog;
-  Office.context.ui.displayDialogAsync(startingRequest.url,
+  Office.context.ui.displayDialogAsync(url,
     function (asyncResult) {
       if (asyncResult.status === Office.AsyncResultStatus.Failed) {
         showNotification(asyncResult.error.code = ": " + asyncResult.error.message);
@@ -191,8 +191,19 @@ function constructQueryString(request, requestPos, pathIdentification) {
   return queryString;
 }
 
+function logRequest(url, status, content) {
+  if(document.getElementById('debugOn').checked) {
+    var temp = '';
+    if(status == 200) {
+      temp = content + '<div style="color:green"' +  '>'  + url + ' ' + status + '</div>';
+    } else {
+      temp = content + '<div style="color:red"' +  '>' + url + ' ' + status + '</div>';
+    };
+    document.getElementById("item-log").innerHTML = temp.toString();
+  }
+}
+
 function followRequestPath(pathIdentification, requestNo, ev) {
-  // if(settings.isenabled follow programatically)
   var xmlHttp = new XMLHttpRequest();
   let request = requestPaths[pathIdentification].requests[requestNo];
   if (requestNo == requestPaths[pathIdentification].requests.length) {
@@ -211,6 +222,8 @@ function followRequestPath(pathIdentification, requestNo, ev) {
         console.log('Success' + ' 200');
         ++requestNo;
         followRequestPath(pathIdentification, requestNo);
+        
+        logRequest(request.url, xmlHttp.status, document.getElementById('item-log').innerHTML);
       }
     } else if (xmlHttp.readyState == 4 && xmlHttp.status != 200) {
       Office.context.mailbox.item.notificationMessages.addAsync("Error", {
@@ -219,6 +232,7 @@ function followRequestPath(pathIdentification, requestNo, ev) {
         icon: "iconid",
         persistent: false
       })
+      logRequest(request.url, xmlHttp.status, document.getElementById('item-log').innerHTML);
     }
   }
   xmlHttp.open(request.type, request.url, /* async */ true);
@@ -252,13 +266,13 @@ export async function run() {
     if (asyncResult.status !== Office.AsyncResultStatus.Succeeded) {
 
     } else {
-      var content = asyncResult.value.trim();
+      var content = asyncResult.value.trim() + item.subject;
       document.getElementById("item-body").innerHTML = "<b>Body:</b> <br/>" + content;
-      var contentTest = "Perioada solicitata / The requested period : test@test.com dadada test@test2.com";
+      document.getElementById("item-log").innerHTML = "<b>Log:</b> <br/>";
 
       // Loop through each email template.
       for (const [key, value] of Object.entries(patterns.patterns[0])) {
-        var returnedFields = bodyContains(contentTest, key);
+        var returnedFields = bodyContains(content, key);
         if (returnedFields != null) {
           var htmlContent = "<b>Fields:</b> <br/>";
           returnedFields.forEach(function (element) {
@@ -274,12 +288,11 @@ export async function run() {
           })
           // Check if email pattern has a regex defined for URLs.
           if (value.actions != null) {
-            var simulateUrl = "Pentru APROBARE accesati link-ul / For APPROVAL access the link :\nhttps://localhost:3000/link.html";
             // Action URLs defined in the email pattern.
             let urls;
             var urlContent = "<b>Actions:</b> <br/>";
             for (const [actionRegex, requestArray] of Object.entries(value.actions[0])) {
-              urls = getFieldValue(bodyContains(simulateUrl, actionRegex), '{url}');
+              urls = getFieldValue(bodyContains(content, actionRegex), '{url}');
               urls.forEach(function (url) {
                 // Generate a string that can be used to identify request paths for each URL found in the body.
                 let pathIdentification = makeid(10);
@@ -294,8 +307,14 @@ export async function run() {
                   'type': 'GET',
                   'params': startingUrlParams
                 });
-                document.getElementById(pathIdentification).addEventListener("click",
-                  followRequestPath.bind(null, pathIdentification, 0), true);
+                if(document.getElementById('sendRequests').checked) {
+                  document.getElementById(pathIdentification).addEventListener("click",
+                    followRequestPath.bind(null, pathIdentification, 0), true);
+                } else {
+                  // Open embedded browser on the given URL.
+                  document.getElementById(pathIdentification).addEventListener("click",
+                    openEmbedded.bind(null, url), true);
+                }
               })
             }
           }

@@ -35,8 +35,26 @@
         <p><label id="item-body"></label></p>
         <p><label id="item-test"></label></p>
         <p><label id="item-actions"></label></p>
+        <p><label id="item-log"></label></p>
         <div role="button" id="run" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
             <span class="ms-Button-label">Run</span>
+        </div>
+
+        <div>
+            <!-- Display HTTP reponse code after each request. -->
+            <h3>Debug</h3>
+            <label class="switch">
+                <input id="debugOn" type="checkbox">
+                <span class="slider round"></span>
+          </label>
+        </div>
+        <div>
+            <!-- Sends HTTP requests programatically. Open embedded browser otherwise. -->
+            <h3>Send requests programatically</h3>
+            <label class="switch">
+                <input id="sendRequests" type="checkbox">
+                <span class="slider round"></span>
+          </label>
         </div>
     </main>
 </body>

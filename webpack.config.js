@@ -20,8 +20,7 @@ module.exports = async (env, options) => {
     },
     entry: {
       polyfill: ["core-js/stable", "regenerator-runtime/runtime"],
-      taskpane: "./src/taskpane/taskpane.js",
-      commands: "./src/commands/commands.js"
+      taskpane: "./src/taskpane/taskpane.js"
     },
     resolve: {
       extensions: [".ts", ".tsx", ".html", ".js", ".json"]
@@ -82,14 +81,9 @@ module.exports = async (env, options) => {
         }
       ]}),
       new HtmlWebpackPlugin({
-        filename: "commands.html",
-        template: "./src/commands/commands.html",
-        chunks: ["polyfill", "commands"]
-      }),
-      new HtmlWebpackPlugin({
         filename: "link.html",
-        template: "./src/commands/link.html",
-        chunks: ["polyfill", "commands"]
+        template: "./src/taskpane/link.html",
+        chunks: ["polyfill", "taskpane"]
       })
     ],
     devServer: {
