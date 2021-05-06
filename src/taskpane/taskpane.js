@@ -118,28 +118,6 @@ function getStatus() {
     });
 }
 
-function Request(url, requestType, queryParameters) {
-  this.url = url;
-  this.requestType = requestType;
-  if (queryParameters) {
-    let iterations = Object.keys(queryParameters).length;
-    this.url += '?';
-    for (const [key, value] of Object.entries(queryParameters)) {
-      this.url += key + '=' + value;
-      if (--iterations)
-        this.url += '&';
-    }
-  }
-  this.queryParameters = queryParameters;
-  // Modify response after sending the request.
-  this.reponse = null;
-}
-
-function Pattern(description, requestPath) {
-  this.description = description;
-  this.requestPaths = requestPath;
-}
-
 function runUrlPath(startingRequest, requestPath) {
   var dialog;
   Office.context.ui.displayDialogAsync(startingRequest.url,
@@ -152,34 +130,6 @@ function runUrlPath(startingRequest, requestPath) {
         dialog.addEventHandler(Office.EventType.DialogMessageReceived, processMessage);
       }
     });
-}
-
-// var requestPaths = {
-//   "Cerere": [
-//     new Request("https://localhost:3000/link.html", "GET", {
-//       "name": "test",
-//       "password": "bop"
-//     }),
-//     new Request("https://localhost:3000/link.html", "GET", {
-//       "password": "test"
-//     })
-//   ]
-// }
-
-// Structure that stores email patterns 
-var emailPatterns = {
-  "Perioada solicitata / The requested period : {email} dadada {interval}{newLine}{user}":
-    [
-      new Pattern("Cerere Invoire", [
-        new Request("https://localhost:3000/link.html", "GET", {
-          "name": "test",
-          "password": "bop"
-        }),
-        new Request("https://localhost:3000/link.html", "GET", {
-          "password": "test"
-        })
-      ])
-    ]
 }
 
 // Helper function that returns every value in the dictionary for the given key.
@@ -195,18 +145,92 @@ function getFieldValue(fieldDictionary, key) {
   return values;
 }
 
+const paramSpecialRegex = /(request)([0-9])([a-zA-Z]+)=([a-zA-Z0-9]+)/;
+
 let requestPaths = []
 
-function followRequestPath(startingRequest) {
-  // if(settings.isenabled follow programatically)
-  let requestID = this.id;
-  let requests = requestPaths[requestID].requests;
-  console.log(typeof(requests));
-  requests.forEach(function(request) {
-    // Send request
-    console.log(request);
-  })
+function getQuery(url) {
+  var query = [],
+    href = url || window.location.href;
+
+  href.replace(/[?&](.+?)=([^&#]*)/g, function (_, key, value) {
+    query.push(key + '=' + decodeURI(value).replace(/\+/g, ' '));
+  });
+
+  return query;
 }
+
+// Returns the full query string after processing the special query params defined in the json file.
+function constructQueryString(request, requestPos, pathIdentification) {
+  let queryString = '';
+  request.params.forEach(function (param) {
+    let match = param.match(paramSpecialRegex);
+    if (match != null) {
+      let requestNo = match[2];
+      let paramLocation = match[3];
+      let paramName = match[4];
+      // Find values in the body of previously sent requests.
+      if (paramLocation == 'body') {
+        if (requestNo < requestPos && requestNo >= 0) {
+          let bodyResponse = requestPaths[pathIdentification].requests[requestNo].response;
+        }
+      
+      // Find param of previously sent requests.
+      } else if (paramLocation == 'param') {
+        let paramsOtherRequest = requestPaths[pathIdentification].requests[requestNo].params;
+        paramsOtherRequest.forEach(function (param2) {
+          if(param2.match(paramName + '=')) {
+            queryString += param2 + '&';
+          }
+        });
+      }
+    } else {
+      queryString += param + '&';
+    }
+  });
+  return queryString;
+}
+
+function followRequestPath(pathIdentification, requestNo, ev) {
+  // if(settings.isenabled follow programatically)
+  var xmlHttp = new XMLHttpRequest();
+  let request = requestPaths[pathIdentification].requests[requestNo];
+  if (requestNo == requestPaths[pathIdentification].requests.length) {
+    Office.context.mailbox.item.notificationMessages.addAsync("Info", {
+      type: "informationalMessage",
+      message: "Request path completed successfully.",
+      icon: "iconid",
+      persistent: false
+    })
+    return;
+  }
+  xmlHttp.onreadystatechange = function () {
+    if (xmlHttp.readyState == 4 && xmlHttp.status == 200) {
+      if (requestNo >= 0 && requestNo < requestPaths[pathIdentification].requests.length) {
+        requestPaths[pathIdentification].requests[requestNo].response = xmlHttp.response;
+        console.log('Success' + ' 200');
+        ++requestNo;
+        followRequestPath(pathIdentification, requestNo);
+      }
+    } else if (xmlHttp.readyState == 4 && xmlHttp.status != 200) {
+      Office.context.mailbox.item.notificationMessages.addAsync("Error", {
+        type: "informationalMessage",
+        message: "Request path execution failed.",
+        icon: "iconid",
+        persistent: false
+      })
+    }
+  }
+  xmlHttp.open(request.type, request.url, /* async */ true);
+  if(request.type.localeCompare('GET') != 1) {
+    xmlHttp.send(null);
+  } else {
+    xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
+    let queryString = constructQueryString(request, requestNo, pathIdentification);
+    xmlHttp.send(queryString);
+  }
+}
+
 
 function makeid(length) {
   var result = [];
@@ -250,7 +274,7 @@ export async function run() {
           })
           // Check if email pattern has a regex defined for URLs.
           if (value.actions != null) {
-            var simulateUrl = "Pentru APROBARE accesati link-ul / For APPROVAL access the link :\nhttps://google.com ";
+            var simulateUrl = "Pentru APROBARE accesati link-ul / For APPROVAL access the link :\nhttps://localhost:3000/link.html";
             // Action URLs defined in the email pattern.
             let urls;
             var urlContent = "<b>Actions:</b> <br/>";
@@ -258,12 +282,20 @@ export async function run() {
               urls = getFieldValue(bodyContains(simulateUrl, actionRegex), '{url}');
               urls.forEach(function (url) {
                 // Generate a string that can be used to identify request paths for each URL found in the body.
-                var pathIdentification = makeid(10);
-                urlContent += '<div id=' + pathIdentification  + '> - ' + url + "</div> <br/>";
+                let pathIdentification = makeid(10);
+                urlContent += '<div id=' + pathIdentification + '> - ' + url + "</div> <br/>";
                 document.getElementById("item-actions").innerHTML = urlContent;
-                document.getElementById(pathIdentification).addEventListener("click", followRequestPath, false);
                 requestPaths[pathIdentification] = requestArray;
-                console.log(requestPaths);
+                // Add starting URL to the requestPath.
+                let startingUrlParams = getQuery(url);
+                
+                requestPaths[pathIdentification].requests.unshift({
+                  'url': url,
+                  'type': 'GET',
+                  'params': startingUrlParams
+                });
+                document.getElementById(pathIdentification).addEventListener("click",
+                  followRequestPath.bind(null, pathIdentification, 0), true);
               })
             }
           }

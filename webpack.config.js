@@ -94,7 +94,9 @@ module.exports = async (env, options) => {
     ],
     devServer: {
       headers: {
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Headers": "X-Requested-With, content-type, Authorization"
       },      
       https: (options.https !== undefined) ? options.https : await devCerts.getHttpsServerOptions(),
       port: process.env.npm_package_config_dev_server_port || 3000
