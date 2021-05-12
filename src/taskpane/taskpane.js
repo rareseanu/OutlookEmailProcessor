@@ -30,24 +30,24 @@ Office.onReady((info) => {
   }
 });
 
-let emailRegex = /(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))/;
+const emailRegex = /(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))/;
 
 // Matches only if the the string contains a single word.
-let userRegex = /\b[A-Z].*?\b/;
-let split = / - /;
-let newLineRegex = /(\r\n|\r|\n)/;
+const userRegex = /\b[A-Z].*?\b/;
+const split = / - /;
+const newLineRegex = /(\r\n|\r|\n)/;
 // Matches every date format (hyphen, slash & dot).
-let dateRegex = /([0]?[1-9]|[1|2][0-9]|[3][0|1])[./-]([0]?[1-9]|[1][0-2])[./-]([0-9]{4})/;
+const dateRegex = /([0]?[1-9]|[1|2][0-9]|[3][0|1])[./-]([0]?[1-9]|[1][0-2])[./-]([0-9]{4})/;
 
-let intervalRegex = new RegExp(dateRegex.source + split.source + dateRegex.source);
+const intervalRegex = new RegExp(dateRegex.source + split.source + dateRegex.source);
 
 // Matches URLs and returns the following array structure:
 // Index 0: Whole URL,    Index 1: Protocol, Index 2: Host, Index 3: Path
 // Index 4: Query string, Index 5: Hash mark
-let urlRegex = /([a-z]+\:\/+)([^\/\s]+)([a-z0-9\-@\^=%&;\/~\+]*)[\?]?([^ \#\r\n]*)#?([^ \#\r\n]*)/mig;
+const urlRegex = /([a-z]+\:\/+)([^\/\s]+)([a-z0-9\-@\^=%&;\/~\+]*)[\?]?([^ \#\r\n]*)#?([^ \#\r\n]*)/mig;
 
 // Structure used to replace each string on the left with it's corresponding regex.
-let regexMap = {
+const regexMap = {
   "{email}": emailRegex,
   "{user}": userRegex,
   "{date}": dateRegex,
@@ -55,10 +55,6 @@ let regexMap = {
   "{newLine}": newLineRegex,
   "{url}": urlRegex
 }
-
-// TODO: parcurgerea inversa
-// documentatie
-// detectare links
 
 function escapeRegex(string) {
   return string.replace(/[-\/\\^$*+?.()|[\]]/g, '\\$&');
@@ -118,6 +114,7 @@ function getStatus() {
     });
 }
 
+// Opens the given URL in a nonmodal window.
 function openEmbedded(url) {
   var dialog;
   Office.context.ui.displayDialogAsync(url,
@@ -146,9 +143,12 @@ function getFieldValue(fieldDictionary, key) {
 }
 
 const paramSpecialRegex = /(request)([0-9])([a-zA-Z]+)=([a-zA-Z0-9]+)/;
+const paramFieldRegex = /([a-zA-Z0-9]+)=({[a-zA-Z]})/;
 
 let requestPaths = []
+let foundFields = []
 
+// Extracts query params from the given URL.
 function getQuery(url) {
   var query = [],
     href = url || window.location.href;
@@ -165,18 +165,19 @@ function constructQueryString(request, requestPos, pathIdentification) {
   let queryString = '';
   request.params.forEach(function (param) {
     let match = param.match(paramSpecialRegex);
+    let fieldMatch = param.match(paramFieldRegex);
     if (match != null) {
       let requestNo = match[2];
       let paramLocation = match[3];
       let paramName = match[4];
       // Find values in the body of previously sent requests.
-      if (paramLocation == 'body') {
+      if (paramLocation == 'body') { // e.g. `request0body=name`
         if (requestNo < requestPos && requestNo >= 0) {
           let bodyResponse = requestPaths[pathIdentification].requests[requestNo].response;
         }
       
       // Find param of previously sent requests.
-      } else if (paramLocation == 'param') {
+      } else if (paramLocation == 'param') { // e.g.  `request0body=name`
         let paramsOtherRequest = requestPaths[pathIdentification].requests[requestNo].params;
         paramsOtherRequest.forEach(function (param2) {
           if(param2.match(paramName + '=')) {
@@ -184,6 +185,13 @@ function constructQueryString(request, requestPos, pathIdentification) {
           }
         });
       }
+    } else if(fieldMatch != null) {
+      // Get the value of the special field found in the email subject/body.
+      returnFields.forEach(function (element) {
+        if(element['key'] == fieldMatch[2]) {
+          queryString += fieldMatch[1] + element['value'] + '&';
+        }
+      })
     } else {
       queryString += param + '&';
     }
@@ -191,6 +199,7 @@ function constructQueryString(request, requestPos, pathIdentification) {
   return queryString;
 }
 
+// Outputs requests' statuses.
 function logRequest(url, status, content) {
   if(document.getElementById('debugOn').checked) {
     var temp = '';
@@ -203,6 +212,7 @@ function logRequest(url, status, content) {
   }
 }
 
+// Recursive function that sends HTTP requests for the given request chain.
 function followRequestPath(pathIdentification, requestNo, ev) {
   var xmlHttp = new XMLHttpRequest();
   let request = requestPaths[pathIdentification].requests[requestNo];
@@ -235,17 +245,21 @@ function followRequestPath(pathIdentification, requestNo, ev) {
       logRequest(request.url, xmlHttp.status, document.getElementById('item-log').innerHTML);
     }
   }
-  xmlHttp.open(request.type, request.url, /* async */ true);
+  let queryString = constructQueryString(request, requestNo, pathIdentification);
+
+  // Append the query params to the URL if the request type is `GET`.
   if(request.type.localeCompare('GET') != 1) {
+    xmlHttp.open(request.type, request.url + queryString, /* async */ true);
     xmlHttp.send(null);
+  // Append the query params in the request body otherwise.
   } else {
+    xmlHttp.open(request.type, request.url, /* async */ true);
     xmlHttp.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
-    let queryString = constructQueryString(request, requestNo, pathIdentification);
     xmlHttp.send(queryString);
   }
 }
 
-
+// Returns a randomly generated string composed of letters & digits.
 function makeid(length) {
   var result = [];
   var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -263,19 +277,20 @@ export async function run() {
   // Write message property value to the task pane
   document.getElementById("item-subject").innerHTML = "<b>Subject:</b> <br/>" + item.subject;
   item.body.getAsync(Office.CoercionType.Text, function (asyncResult) {
-    if (asyncResult.status !== Office.AsyncResultStatus.Succeeded) {
-
-    } else {
-      var content = asyncResult.value.trim() + item.subject;
-      document.getElementById("item-body").innerHTML = "<b>Body:</b> <br/>" + content;
+    if (asyncResult.status == Office.AsyncResultStatus.Succeeded) {
+      let body = asyncResult.value.trim() + item.subject;
+      document.getElementById("item-body").innerHTML = "<b>Body:</b> <br/>" + body;
       document.getElementById("item-log").innerHTML = "<b>Log:</b> <br/>";
+      
+      // Concatenate subject and email body into a single string.
+      let content = subject + body;
 
       // Loop through each email template.
       for (const [key, value] of Object.entries(patterns.patterns[0])) {
-        var returnedFields = bodyContains(content, key);
-        if (returnedFields != null) {
+        foundFields = bodyContains(contentTest, key);
+        if (foundFields != null) {
           var htmlContent = "<b>Fields:</b> <br/>";
-          returnedFields.forEach(function (element) {
+          foundFields.forEach(function (element) {
             htmlContent += '- ' + element['key'] + ' : ' + element['value'] + "<br/>";
           })
           document.getElementById("item-test").innerHTML = htmlContent;
@@ -292,7 +307,7 @@ export async function run() {
             let urls;
             var urlContent = "<b>Actions:</b> <br/>";
             for (const [actionRegex, requestArray] of Object.entries(value.actions[0])) {
-              urls = getFieldValue(bodyContains(content, actionRegex), '{url}');
+              urls = getFieldValue(bodyContains(body, actionRegex), '{url}');
               urls.forEach(function (url) {
                 // Generate a string that can be used to identify request paths for each URL found in the body.
                 let pathIdentification = makeid(10);
@@ -328,7 +343,13 @@ export async function run() {
           persistent: false
         })
       }
-
+    } else {
+      item.notificationMessages.addAsync("Error", {
+        type: "informationalMessage",
+        message: "Email body acquisition failed.",
+        icon: "iconid",
+        persistent: false
+      })
     }
   });
 }
