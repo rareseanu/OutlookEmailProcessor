@@ -1,22 +1,23 @@
 {
     "patterns": [
         {
-            "Perioada solicitata / The requested period : {email} dadada {email}": {
+            "Perioada solicitata / The requested period : {email} {interval}": {
                 "description": "Cerere invoire",
                 "actions": [
                     {
-                        "Pentru APROBARE accesati link-ul / For APPROVAL access the link :{newLine}{url}": {
+                        "Pentru APROBARE accesati link-ul / For APPROVAL access the link : {url}": {
                             "requests": [
                                 {
                                     "url": "https://localhost:3000/link.html",
                                     "type": "GET",
                                     "params": [
+                                        "email={email}",
                                         "password=fromSecondRequest"
                                     ]
                                 },
                                 {
                                     "url": "https://localhost:3000/taskpane.html",
-                                    "type": "PUT",
+                                    "type": "GET",
                                     "params": [
                                         "name=da",
                                         "email={email}",

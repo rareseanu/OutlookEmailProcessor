@@ -20,7 +20,8 @@ module.exports = async (env, options) => {
     },
     entry: {
       polyfill: ["core-js/stable", "regenerator-runtime/runtime"],
-      taskpane: "./src/taskpane/taskpane.js"
+      taskpane: "./src/taskpane/taskpane.js",
+      simulator: "./src/simulator/simulator.js"
     },
     resolve: {
       extensions: [".ts", ".tsx", ".html", ".js", ".json"]
@@ -57,6 +58,11 @@ module.exports = async (env, options) => {
         filename: "taskpane.html",
         template: "./src/taskpane/taskpane.html",
         chunks: ["polyfill", "taskpane"]
+      }),
+      new HtmlWebpackPlugin({
+        filename: "simulator.html",
+        template: "./src/simulator/simulator.html",
+        chunks: ["polyfill", "simulator"]
       }),
       new CopyWebpackPlugin({
         patterns: [

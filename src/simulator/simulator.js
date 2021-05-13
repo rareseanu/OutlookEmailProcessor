@@ -62,6 +62,14 @@ function escapeRegex(string) {
 // e.g. `{key: "{fieldName}", value: "fieldValue"}`
 var extractedFields;
 
+function generateRegexFromPattern(regexString) {
+  // Replace globally, case insensitive.
+  var finalRegex = regexString.replace(/{email}|{user}|{date}|{interval}|{newLine}|{url}/gi, function (foundField) {
+    return regexMap[foundField].source;
+  });
+  return finalRegex;
+}
+
 // Returns special fields defined inside the `regexString` parameter that were found inside `bodyContent`.
 function bodyContains(bodyContent, regexString) {
   escapeRegex(regexString);
@@ -224,7 +232,6 @@ function followRequestPath(pathIdentification, requestNo, ev) {
         ++requestNo;
         followRequestPath(pathIdentification, requestNo);
 
-        logRequest(request.url, xmlHttp.status, document.getElementById('item-log').innerHTML);
       }
     } else if (xmlHttp.readyState == 4 && xmlHttp.status != 200) {
       Office.context.mailbox.item.notificationMessages.addAsync("Error", {
@@ -233,7 +240,6 @@ function followRequestPath(pathIdentification, requestNo, ev) {
         icon: "iconid",
         persistent: false
       })
-      logRequest(request.url, xmlHttp.status, document.getElementById('item-log').innerHTML);
     }
   }
   let queryString = constructQueryString(request, requestNo, pathIdentification);
@@ -266,11 +272,20 @@ function makeid(length) {
 }
 
 function resetUI() {
-  document.getElementById("item-subject").innerHTML = "";
-  document.getElementById("item-log").innerHTML = "";
   document.getElementById("item-test").innerHTML = "";
-  document.getElementById("title").innerText = "";
+  document.getElementById("title").innerText = "Simulator";
   document.getElementById("item-actions").innerHTML = "";
+}
+
+function logRequestPath(pathIdentification) {
+  document.getElementById("item-request-chain").innerHTML = '<b> Request chain </b> <br/>';
+  let i = 1;
+  requestPaths[pathIdentification].requests.forEach(function (request) {
+    let queryString = constructQueryString(request, i, pathIdentification);
+    document.getElementById("item-request-chain").innerHTML += i + ". " + request.url +
+      "<br/>" + queryString + "<br/>";
+    ++i;
+  });
 }
 
 async function run() {
@@ -278,83 +293,71 @@ async function run() {
   var item = Office.context.mailbox.item;
   // Write message property value to the task pane
   resetUI();
-  document.getElementById("item-subject").innerHTML = "<b>Subject:</b> <br/>" + item.subject;
-  item.body.getAsync(Office.CoercionType.Text, function (asyncResult) {
-    if (asyncResult.status == Office.AsyncResultStatus.Succeeded) {
-      let body = asyncResult.value.trim() + item.subject;
-      //document.getElementById("item-body").innerHTML = "<b>Body:</b> <br/>" + body;
-      document.getElementById("item-log").innerHTML = "<b>Log:</b> <br/>";
 
-      // Concatenate subject and email body into a single string.
-      // let content = subject + body;
-      let content = "Perioada solicitata / The requested period : test@yahoo.com 2000-08-31 - 08-29-2000";
-      // Loop through each email template.
-      for (const [key, value] of Object.entries(patterns.patterns[0])) {
-        extractedFields = bodyContains(content, key);
-        if (extractedFields != null) {
-          var htmlContent = "<b>Fields:</b> <br/>";
-          extractedFields.forEach(function (element) {
-            htmlContent += '- ' + element['key'] + ' : ' + element['value'] + "<br/>";
-          })
-          document.getElementById("item-test").innerHTML = htmlContent;
-          document.getElementById("title").innerText = value.description;
-          item.notificationMessages.addAsync("Info", {
-            type: "informationalMessage",
-            message: "Email pattern found: " + value.description,
-            icon: "iconid",
-            persistent: false
-          })
-          // Check if email pattern has a regex defined for URLs.
-          if (value.actions != null) {
-            // Action URLs defined in the email pattern.
-            let urls;
-            let tempBody = "Pentru APROBARE accesati link-ul / For APPROVAL access the link :\nhttps://localhost:3000/link.html";
-            var urlContent = "<b>Actions:</b> <br/>";
-            for (const [actionRegex, requestArray] of Object.entries(value.actions[0])) {
-              urls = getFieldValue(bodyContains(tempBody, actionRegex), '{url}');
-              urls.forEach(function (url) {
-                // Generate a string that can be used to identify request paths for each URL found in the body.
-                let pathIdentification = makeid(10);
-                urlContent += '<div id=' + pathIdentification + '> - ' + url + "</div> <br/>";
-                document.getElementById("item-actions").innerHTML = urlContent;
-                requestPaths[pathIdentification] = requestArray;
-                // Add starting URL to the requestPath.
-                let startingUrlParams = getQuery(url);
+  let subject = document.getElementById("item-subject-input").value;
+  let body = document.getElementById("item-body-input").value;
+  //document.getElementById("item-body").innerHTML = "<b>Body:</b> <br/>" + body;
 
-                requestPaths[pathIdentification].requests.unshift({
-                  'url': url,
-                  'type': 'GET',
-                  'params': startingUrlParams
-                });
-                if (document.getElementById('sendRequests').checked) {
-                  document.getElementById(pathIdentification).addEventListener("click",
-                    followRequestPath.bind(null, pathIdentification, 0), true);
-                } else {
-                  // Open embedded browser on the given URL.
-                  document.getElementById(pathIdentification).addEventListener("click",
-                    openEmbedded.bind(null, url), true);
-                }
-              })
-            }
-          }
-          break;
-        }
-      }
-      if (document.getElementById("title").innerText == 'Process Email') {
-        item.notificationMessages.addAsync("Info", {
-          type: "informationalMessage",
-          message: "No email pattern found.",
-          icon: "iconid",
-          persistent: false
-        })
-      }
-    } else {
-      item.notificationMessages.addAsync("Error", {
+  // Concatenate subject and email body into a single string.
+  // let content = subject + body;
+  let content = subject + body;
+  // Loop through each email template.
+  for (const [key, value] of Object.entries(patterns.patterns[0])) {
+    extractedFields = bodyContains(content, key);
+    if (extractedFields != null) {
+      var htmlContent = "<b>Fields:</b> <br/>";
+      extractedFields.forEach(function (element) {
+        htmlContent += '- ' + element['key'] + ' : ' + element['value'] + "<br/>";
+      })
+      document.getElementById("item-test").innerHTML = htmlContent;
+      document.getElementById("title").innerText = value.description;
+      document.getElementById("item-regex").innerHTML = '<b>Generated regex</b> <br/>' + generateRegexFromPattern(key);
+      item.notificationMessages.addAsync("Info", {
         type: "informationalMessage",
-        message: "Email body acquisition failed.",
+        message: "Email pattern found: " + value.description,
         icon: "iconid",
         persistent: false
       })
+      // Check if email pattern has a regex defined for URLs.
+      if (value.actions != null) {
+        document.getElementById("item-found-pattern").innerHTML = "<b>Found pattern</b> <br/>" + key;
+        // Action URLs defined in the email pattern.
+        let urls;
+        var urlContent = "<b>Actions:</b> <br/>";
+        document.getElementById("item-found-actionPatterns").innerHTML = "<b>Found action patterns</b> <br/>";
+        for (const [actionRegex, requestArray] of Object.entries(value.actions[0])) {
+          document.getElementById("item-found-actionPatterns").innerHTML += actionRegex + "<br/>";
+          urls = getFieldValue(bodyContains(body, actionRegex), '{url}');
+          if (urls.length != 0) {
+            urls.forEach(function (url) {
+              // Generate a string that can be used to identify request paths for each URL found in the body.
+              let pathIdentification = makeid(10);
+              urlContent += '<div id=' + pathIdentification + '> - ' + url + "</div> <br/>";
+              document.getElementById("item-actions").innerHTML = urlContent;
+              requestPaths[pathIdentification] = requestArray;
+              // Add starting URL to the requestPath.
+              let startingUrlParams = getQuery(url);
+
+              requestPaths[pathIdentification].requests.unshift({
+                'url': url,
+                'type': 'GET',
+                'params': startingUrlParams
+              });
+              document.getElementById(pathIdentification).addEventListener("click",
+                logRequestPath.bind(null, pathIdentification), true);
+            })
+          }
+        }
+      }
+      break;
     }
-  });
+  }
+  if (document.getElementById("title").innerText == 'Process Email') {
+    item.notificationMessages.addAsync("Info", {
+      type: "informationalMessage",
+      message: "No email pattern found.",
+      icon: "iconid",
+      persistent: false
+    })
+  }
 }

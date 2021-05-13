@@ -62,6 +62,21 @@
                     <SourceLocation resid="Taskpane.Url"/>
                   </Action>
                 </Control>
+                <Control xsi:type="Button" id="addInSimulator">
+                  <Label resid="SimulatorButton.Label"/>
+                  <Supertip>
+                    <Title resid="SimulatorButton.Label"/>
+                    <Description resid="SimulatorButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Simulator.Url"/>
+                  </Action>
+                </Control>
               </Group>
             </OfficeTab>
           </ExtensionPoint>
@@ -76,11 +91,17 @@
       </bt:Images>
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html"/>
+        <bt:Url id="Simulator.Url" DefaultValue="https://localhost:3000/simulator.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GroupLabel" DefaultValue="Email Processor"/>
         <bt:String id="TaskpaneButton.Label" DefaultValue="Process"/>
+        <bt:String id="SimulatorButton.Label" DefaultValue="Simulator"/>
       </bt:ShortStrings>
+      <bt:LongStrings>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Da"/>
+        <bt:String id="SimulatorButton.Tooltip" DefaultValue="da"/>
+      </bt:LongStrings>
     </Resources>
   </VersionOverrides>
 </OfficeApp>
