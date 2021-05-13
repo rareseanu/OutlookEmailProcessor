@@ -82,10 +82,5 @@ Based on the JSON structure example given previously, the workflow is as follows
 Depending on the user's needs, special fields can also be added/modified:
 
 * Declare regex literal \for that specific field inside `src/taskpane/taskpane.js`.
-* Add it to the `regexMap` dictionary, inside `src/taskpane/taskpane.js` line 50.
-* Add the field to the replace function, inside `src/taskpane/taskpane.js` line 76.
-
-
-// TODO
-Unit testing
-year-month-day format
+* Add it to the `regexMap` dictionary, inside `src/taskpane/taskpane.js` line 48.
+* Add the field to the replace function, inside `src/taskpane/taskpane.js` line 74.

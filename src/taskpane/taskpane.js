@@ -281,13 +281,12 @@ async function run() {
   document.getElementById("item-subject").innerHTML = "<b>Subject:</b> <br/>" + item.subject;
   item.body.getAsync(Office.CoercionType.Text, function (asyncResult) {
     if (asyncResult.status == Office.AsyncResultStatus.Succeeded) {
-      let body = asyncResult.value.trim() + item.subject;
+      let body = asyncResult.value.trim();
       //document.getElementById("item-body").innerHTML = "<b>Body:</b> <br/>" + body;
       document.getElementById("item-log").innerHTML = "<b>Log:</b> <br/>";
 
       // Concatenate subject and email body into a single string.
-      // let content = subject + body;
-      let content = "Perioada solicitata / The requested period : test@yahoo.com 2000-08-31 - 08-29-2000";
+      let content = item.subject + body;
       // Loop through each email template.
       for (const [key, value] of Object.entries(patterns.patterns[0])) {
         extractedFields = bodyContains(content, key);
@@ -308,10 +307,9 @@ async function run() {
           if (value.actions != null) {
             // Action URLs defined in the email pattern.
             let urls;
-            let tempBody = "Pentru APROBARE accesati link-ul / For APPROVAL access the link :\nhttps://localhost:3000/link.html";
             var urlContent = "<b>Actions:</b> <br/>";
             for (const [actionRegex, requestArray] of Object.entries(value.actions[0])) {
-              urls = getFieldValue(bodyContains(tempBody, actionRegex), '{url}');
+              urls = getFieldValue(bodyContains(body, actionRegex), '{url}');
               urls.forEach(function (url) {
                 // Generate a string that can be used to identify request paths for each URL found in the body.
                 let pathIdentification = makeid(10);
