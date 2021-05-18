@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "core-js": "^3.9.1",
+    "exceljs": "^4.2.1",
     "regenerator-runtime": "^0.13.7"
   },
   "devDependencies": {

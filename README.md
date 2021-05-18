@@ -84,3 +84,10 @@ Depending on the user's needs, special fields can also be added/modified:
 * Declare regex literal \for that specific field inside `src/taskpane/taskpane.js`.
 * Add it to the `regexMap` dictionary, inside `src/taskpane/taskpane.js` line 48.
 * Add the field to the replace function, inside `src/taskpane/taskpane.js` line 74.
+
+
+# TODO:
+* Add field in the config file that identifies functions that need to be executed on action match.
+* Error handling for the config file content.
+* Logic behind the excel action.
+* Benchmark regexes inside the simulator.

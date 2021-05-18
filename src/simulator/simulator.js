@@ -1,3 +1,5 @@
+import ExcelJS from 'exceljs/dist/es5/exceljs.browser';
+
 // images references in the manifest
 import "../../assets/icon-16.png";
 import "../../assets/icon-32.png";
@@ -286,6 +288,34 @@ function logRequestPath(pathIdentification) {
       "<br/>" + queryString + "<br/>";
     ++i;
   });
+  printExcelData('src/taskpane/Book1.xlsx');
+}
+
+function printExcelData(filePath) {
+  let wb = new ExcelJS.Workbook();
+  fetch(filePath)
+    .then((data) => {
+      return data.arrayBuffer();
+    })
+    .then((array) => {
+      wb.xlsx.load(array).then(workbook => {
+        console.log(workbook, 'workbook instance')
+        workbook.eachSheet((sheet, id) => {
+          sheet.eachRow((row, rowIndex) => {
+            console.log(row.values, rowIndex)
+          })
+        });
+        console.log(getExcelCell(wb, 0, 4, 4));
+        getExcelCell(wb, 0, 4, 4).value = "TEST";
+        console.log(getExcelCell(wb, 0, 4, 4));
+      })
+    });
+}
+
+function getExcelCell(workbook, worksheetNO, rowNO, columnNO) {
+  let worksheet = workbook.worksheets[worksheetNO];
+  let row = worksheet.getRow(rowNO);
+  return row.getCell(columnNO);
 }
 
 async function run() {
