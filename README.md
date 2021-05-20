@@ -91,3 +91,4 @@ Depending on the user's needs, special fields can also be added/modified:
 * Error handling for the config file content.
 * Logic behind the excel action.
 * Benchmark regexes inside the simulator.
+* Security problem with the buffer taken from the POST request.

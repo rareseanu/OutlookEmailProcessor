@@ -35,6 +35,32 @@ const dateRegex = new RegExp("(" + dd_mm_yyyy.source + "|" + mm_dd_yyyy.source +
 
 const intervalRegex = new RegExp(dateRegex.source + split.source + dateRegex.source);
 
+function getDatesFromInterval(interval) {
+  var dd_mm_yyyy_regex = new RegExp(dd_mm_yyyy.source, dd_mm_yyyy.flags + 'g');
+  let dd_mm_yyyy_match = [...interval[0].matchAll(dd_mm_yyyy_regex)];
+  if(dd_mm_yyyy_match != null) {
+    let startDate = new Date(dd_mm_yyyy_match[0][3], dd_mm_yyyy_match[0][2] - 1, dd_mm_yyyy_match[0][1]);
+    let endDate = new Date(dd_mm_yyyy_match[1][3], dd_mm_yyyy_match[1][2] - 1, dd_mm_yyyy_match[1][1]);
+    return [startDate, endDate];
+  }
+
+  var mm_dd_yyyy_regex = new RegExp(mm_dd_yyyy.source, mm_dd_yyyy.flags + 'g');
+  let mm_dd_yyyy_match = [...interval[0].matchAll(mm_dd_yyyy_regex)];
+  if(mm_dd_yyyy_match != null) {
+    let startDate = new Date(mm_dd_yyyy_match[0][3] - 1, mm_dd_yyyy_match[0][1], mm_dd_yyyy_match[0][2]);
+    let endDate = new Date(mm_dd_yyyy_match[1][3] - 1, mm_dd_yyyy_match[1][1], mm_dd_yyyy_match[1][2]);
+    return [startDate, endDate];
+  }
+
+  var yyyy_mm_dd_regex = new RegExp(yyyy_mm_dd.source, yyyy_mm_dd.flags + 'g');
+  let yyyy_mm_dd_match = [...interval[0].matchAll(yyyy_mm_dd_regex)];
+  if(yyyy_mm_dd_match != null) {
+    let startDate = new Date(yyyy_mm_dd_match[0][1], yyyy_mm_dd_match[0][2] - 1, yyyy_mm_dd_match[0][3]);
+    let endDate = new Date(yyyy_mm_dd_match[1][1], yyyy_mm_dd_match[1][2] - 1, yyyy_mm_dd_match[1][3]);
+    return [startDate, endDate];
+  }
+}
+
 // Matches URLs and returns the following array structure:
 // Index 0: Whole URL,    Index 1: Protocol, Index 2: Host, Index 3: Path
 // Index 4: Query string, Index 5: Hash mark
@@ -282,14 +308,15 @@ async function logRequestPath(pathIdentification) {
       "<br/>" + queryString + "<br/>";
     ++i;
   });
-  let excel = new ExcelFile('/taskpane/Book1.xlsx');
+  let excel = new ExcelFile('/simulator/Book1.xlsx');
   excel.loadExcelFile()
     .then(() => {
-      return excel.writeToCell(0, 4, 4, "HEY");
+      let dates = getDatesFromInterval(getFieldValue(extractedFields, "{interval}"));
+      let email = getFieldValue(extractedFields, "{email}")[0];
+      return excel.addEmail(0, 1, email, dates);
     })
-    .then((data) => {
-      console.log(data);
-      sendExcelPostRequest(data);
+    .then((data2) => {
+      sendExcelPostRequest(data2);
     })
 }
 
@@ -298,7 +325,6 @@ function sendExcelPostRequest(excelBuffer) {
   xhr.open("POST", "https://localhost:3000/update", true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   let json = JSON.stringify({excel: excelBuffer});
-  console.log(json + "inside request");
   xhr.send(json);
 }
 

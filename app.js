@@ -11,18 +11,12 @@ app.use(express.static('src'));
 app.use(express.static('node_modules'));
 app.use(express.static('assets'));
 
-app.get('/test', (req, res) => {
-    fs.writeFile('test.txt','test',function(err){
-        if(err) console.error(err);
-   })
-})
-
 app.post('/update', jsonParser, (req, res) => {
     console.log(req.body.excel.data);
     let workbook = new ExcelJS.Workbook();
-    fs.writeFile('v2.xlsx', Buffer.from(req.body.excel.data), (err) => {
+    fs.writeFile(__dirname + '/src/simulator/Book1.xlsx', Buffer.from(req.body.excel.data), (err) => {
         if (err) {
-            console.log('Error while writing the excel file.');
+            console.log(err)
         }
     });
 })
