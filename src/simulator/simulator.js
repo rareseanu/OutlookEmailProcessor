@@ -1,19 +1,13 @@
-import ExcelJS from 'exceljs/dist/es5/exceljs.browser';
-
-// images references in the manifest
-import "../../assets/icon-16.png";
-import "../../assets/icon-32.png";
-import "../../assets/icon-80.png";
+import { ExcelFile } from '/utils/excelUtils.js';
 
 // JSON structure that stores email patterns.
 let patterns = []
 
 async function readJson() {
-  let response = await fetch('patterns.json');
+  let response = await fetch('/taskpane/patterns.json');
   let patterns = await response.json();
   return patterns;
 }
-
 Office.onReady((info) => {
   if (info.host === Office.HostType.Outlook) {
     document.getElementById("sideload-msg").style.display = "none";
@@ -279,7 +273,7 @@ function resetUI() {
   document.getElementById("item-actions").innerHTML = "";
 }
 
-function logRequestPath(pathIdentification) {
+async function logRequestPath(pathIdentification) {
   document.getElementById("item-request-chain").innerHTML = '<b> Request chain </b> <br/>';
   let i = 1;
   requestPaths[pathIdentification].requests.forEach(function (request) {
@@ -288,34 +282,24 @@ function logRequestPath(pathIdentification) {
       "<br/>" + queryString + "<br/>";
     ++i;
   });
-  printExcelData('src/taskpane/Book1.xlsx');
-}
-
-function printExcelData(filePath) {
-  let wb = new ExcelJS.Workbook();
-  fetch(filePath)
-    .then((data) => {
-      return data.arrayBuffer();
+  let excel = new ExcelFile('/taskpane/Book1.xlsx');
+  excel.loadExcelFile()
+    .then(() => {
+      return excel.writeToCell(0, 4, 4, "HEY");
     })
-    .then((array) => {
-      wb.xlsx.load(array).then(workbook => {
-        console.log(workbook, 'workbook instance')
-        workbook.eachSheet((sheet, id) => {
-          sheet.eachRow((row, rowIndex) => {
-            console.log(row.values, rowIndex)
-          })
-        });
-        console.log(getExcelCell(wb, 0, 4, 4));
-        getExcelCell(wb, 0, 4, 4).value = "TEST";
-        console.log(getExcelCell(wb, 0, 4, 4));
-      })
-    });
+    .then((data) => {
+      console.log(data);
+      sendExcelPostRequest(data);
+    })
 }
 
-function getExcelCell(workbook, worksheetNO, rowNO, columnNO) {
-  let worksheet = workbook.worksheets[worksheetNO];
-  let row = worksheet.getRow(rowNO);
-  return row.getCell(columnNO);
+function sendExcelPostRequest(excelBuffer) {
+  var xhr = new XMLHttpRequest();
+  xhr.open("POST", "https://localhost:3000/update", true);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  let json = JSON.stringify({excel: excelBuffer});
+  console.log(json + "inside request");
+  xhr.send(json);
 }
 
 async function run() {

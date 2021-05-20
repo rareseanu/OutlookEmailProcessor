@@ -5,6 +5,7 @@ const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const fs = require("fs");
+var https = require('https');
 const webpack = require("webpack");
 
 const urlDev="https://localhost:3000/";

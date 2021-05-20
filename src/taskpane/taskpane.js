@@ -1,13 +1,9 @@
-// images references in the manifest
-import "../../assets/icon-16.png";
-import "../../assets/icon-32.png";
-import "../../assets/icon-80.png";
 
 // JSON structure that stores email patterns.
 let patterns = []
 
 async function readJson() {
-  let response = await fetch('patterns.json');
+  let response = await fetch('/taskpane/patterns.json');
   let patterns = await response.json();
   return patterns;
 }
