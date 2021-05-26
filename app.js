@@ -1,9 +1,10 @@
+var ExcelFile = require("./src/utils/excelUtils.js")
+
 const express = require('express')
 const bodyParser = require('body-parser')
 const ExcelJS = require('exceljs');
 const app = express()
 const fs = require('fs')
-const port = 3000
 const https = require('https')
 
 var jsonParser = bodyParser.json()
@@ -11,14 +12,36 @@ app.use(express.static('src'));
 app.use(express.static('node_modules'));
 app.use(express.static('assets'));
 
+// Procesare pe server
+// Trimitere doar parametrii de data & email
+// Config in UI.
+
 app.post('/update', jsonParser, (req, res) => {
     console.log(req.body.excel.data);
-    let workbook = new ExcelJS.Workbook();
     fs.writeFile(__dirname + '/src/simulator/Book1.xlsx', Buffer.from(req.body.excel.data), (err) => {
         if (err) {
             console.log(err)
         }
     });
+})
+
+app.post('/updateExcel', jsonParser, (req, res) => {
+    let email = req.body.email;
+    let dates = req.body.dates;
+    console.log(email);
+    console.log(dates);
+    let excel = new ExcelFile(__dirname + '/src/simulator/Book1.xlsx');
+    excel.loadExcelFile()
+    .then(() => {
+      return excel.addEmail(0, 1, email, dates);
+    })
+    .then((data2) => {
+        fs.writeFile(__dirname + '/src/simulator/Book1.xlsx', Buffer.from(data2), (err) => {
+            if (err) {
+                console.log(err)
+            }
+        });
+    })
 })
 
 app.get('/link.html', (req, res) => {

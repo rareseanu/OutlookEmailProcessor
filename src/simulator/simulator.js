@@ -1,5 +1,3 @@
-import { ExcelFile } from '/utils/excelUtils.js';
-
 // JSON structure that stores email patterns.
 let patterns = []
 
@@ -308,23 +306,17 @@ async function logRequestPath(pathIdentification) {
       "<br/>" + queryString + "<br/>";
     ++i;
   });
-  let excel = new ExcelFile('/simulator/Book1.xlsx');
-  excel.loadExcelFile()
-    .then(() => {
-      let dates = getDatesFromInterval(getFieldValue(extractedFields, "{interval}"));
-      let email = getFieldValue(extractedFields, "{email}")[0];
-      return excel.addEmail(0, 1, email, dates);
-    })
-    .then((data2) => {
-      sendExcelPostRequest(data2);
-    })
+
+  let dates = getDatesFromInterval(getFieldValue(extractedFields, "{interval}"));
+  let email = getFieldValue(extractedFields, "{email}")[0];
+  sendExcelPostRequest(dates, email);
 }
 
-function sendExcelPostRequest(excelBuffer) {
+function sendExcelPostRequest(dates, email) {
   var xhr = new XMLHttpRequest();
-  xhr.open("POST", "https://localhost:3000/update", true);
+  xhr.open("POST", "https://localhost:3000/updateExcel", true);
   xhr.setRequestHeader('Content-Type', 'application/json');
-  let json = JSON.stringify({excel: excelBuffer});
+  let json = JSON.stringify({dates: dates, email: email});
   xhr.send(json);
 }
 
