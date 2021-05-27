@@ -77,6 +77,21 @@
                     <SourceLocation resid="Simulator.Url"/>
                   </Action>
                 </Control>
+                <Control xsi:type="Button" id="addInConfiguration">
+                  <Label resid="ConfigurationButton.Label"/>
+                  <Supertip>
+                    <Title resid="ConfigurationButton.Label"/>
+                    <Description resid="ConfigurationButton.Tooltip"/>
+                  </Supertip>
+                  <Icon>
+                    <bt:Image size="16" resid="Icon.16x16"/>
+                    <bt:Image size="32" resid="Icon.32x32"/>
+                    <bt:Image size="80" resid="Icon.80x80"/>
+                  </Icon>
+                  <Action xsi:type="ShowTaskpane">
+                    <SourceLocation resid="Configuration.Url"/>
+                  </Action>
+                </Control>
               </Group>
             </OfficeTab>
           </ExtensionPoint>
@@ -92,15 +107,18 @@
       <bt:Urls>
         <bt:Url id="Taskpane.Url" DefaultValue="https://localhost:3000/taskpane.html"/>
         <bt:Url id="Simulator.Url" DefaultValue="https://localhost:3000/simulator.html"/>
+        <bt:Url id="Configuration.Url" DefaultValue="https://localhost:3000/configuration.html"/>
       </bt:Urls>
       <bt:ShortStrings>
         <bt:String id="GroupLabel" DefaultValue="Email Processor"/>
         <bt:String id="TaskpaneButton.Label" DefaultValue="Process"/>
         <bt:String id="SimulatorButton.Label" DefaultValue="Simulator"/>
+        <bt:String id="ConfigurationButton.Label" DefaultValue="Configuration"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Da"/>
-        <bt:String id="SimulatorButton.Tooltip" DefaultValue="da"/>
+        <bt:String id="TaskpaneButton.Tooltip" DefaultValue="Email processor main pane."/>
+        <bt:String id="SimulatorButton.Tooltip" DefaultValue="Email processor simulator."/>
+        <bt:String id="ConfigurationButton.Tooltip" DefaultValue="Email processor configuration."/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>

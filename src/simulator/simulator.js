@@ -306,14 +306,15 @@ async function logRequestPath(pathIdentification) {
       "<br/>" + queryString + "<br/>";
     ++i;
   });
-
   let dates = getDatesFromInterval(getFieldValue(extractedFields, "{interval}"));
   let email = getFieldValue(extractedFields, "{email}")[0];
+
   sendExcelPostRequest(dates, email);
 }
 
 function sendExcelPostRequest(dates, email) {
   var xhr = new XMLHttpRequest();
+  
   xhr.open("POST", "https://localhost:3000/updateExcel", true);
   xhr.setRequestHeader('Content-Type', 'application/json');
   let json = JSON.stringify({dates: dates, email: email});

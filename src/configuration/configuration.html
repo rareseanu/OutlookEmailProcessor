@@ -8,7 +8,7 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Email Processor Simulator</title>
+    <title>Email Processor Add-In</title>
 
     <!-- Office JavaScript API -->
     <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
@@ -18,36 +18,34 @@
 
     <!-- Template styles -->
     <link href="/taskpane/taskpane.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/1.10.0/exceljs.min.js" integrity="sha256-NwTJQSOPRRgFqw5ol83SU70DgTvXvQ/dFdPcRJoCAFQ=" crossorigin="anonymous"></script>
-    <script type="module" src="/simulator/simulator.js"></script>
+
+    <script src="/configuration/configuration.js"></script>
 </head>
 
-<body class="ms-font-m ms-welcome ms-Fabric">
+<body class="ms-font-m ms-welcome ms-color-communicationPrimary ms-Fabric">
     <header class="ms-welcome__header ms-bgColor-neutralLighter">
-        <i style="font-size:40px" class="ms-Icon ms-Icon--DeveloperTools" aria-hidden="true"></i>
-        <h1 id="title" class="ms-font-su">Simulator</h1>
+        <i style="font-size:40px" class="ms-Icon ms-Icon--ConfigurationSolid" aria-hidden="true"></i>
+        <h1 id="title" class="ms-font-su">Configuration</h1>
     </header>
     <section id="sideload-msg" class="ms-welcome__main">
         <h2 class="ms-font-xl">Please sideload your add-in to see app body.</h2>
     </section>
     <main id="app-body" class="ms-welcome__main" style="display: none;">
         <p>
-            <label id="item-subject"><b>Subject</b></label>
-            <textarea id="item-subject-input" rows="4" cols="40">Perioada solicitata / The requested period : test@yahoo.com 11-08-2000 - 15-08-2000</textarea>
+            <label id="config-url"><b>Domain</b></label>
+            <input type="text" id="domain"><br><br>        
         </p>
         <p>
-            <label id="item-body"><b>Body</b></label>
-            <textarea id="item-body-input" rows="4" cols="40">Pentru APROBARE accesati link-ul / For APPROVAL access the link : https://localhost:3000/link.html</textarea>
+            <label id="config-port"><b>Port</b></label>
+            <input type="number" id="port"><br><br>        
+        </p>
+        <p>
+            <label id="config-excel"><b>Excel file path</b></label>
+            <input type="text" id="excel"><br><br>        
         </p>
         <div role="button" id="run" class="ms-welcome__action ms-Button ms-Button--hero ms-font-xl">
-            <span class="ms-Button-label">Run</span>
+            <span class="ms-Button-label">Save</span>
         </div>
-        <p><label id="item-found-pattern"></label></p>
-        <p><label id="item-regex"></label></p>
-        <p><label id="item-test"></label></p>
-        <p><label id="item-found-actionPatterns"></label></p>
-        <p><label id="item-actions"></label></p>
-        <p><div style="width: 200px;" id="item-request-chain"></div></p>
     </main>
 </body>
 
