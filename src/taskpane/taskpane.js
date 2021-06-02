@@ -1,4 +1,3 @@
-
 // JSON structure that stores email patterns.
 let patterns = []
 
@@ -32,7 +31,6 @@ const dd_mm_yyyy = /([0]?[1-9]|[1|2][0-9]|[3][0|1])[./-]([0]?[1-9]|[1][0-2])[./-
 const mm_dd_yyyy = /([0]?[1-9]|[1][0-2])[./-]([0]?[1-9]|[1|2][0-9]|[3][0|1])[./-]([0-9]{4})/;
 const yyyy_mm_dd = /([0-9]{4})[./-]([0]?[1-9]|[1][0-2])[./-]([0]?[1-9]|[1|2][0-9]|[3][0|1])/;
 const dateRegex = new RegExp("(" + dd_mm_yyyy.source + "|" + mm_dd_yyyy.source + "|" + yyyy_mm_dd.source + ")");
-
 const intervalRegex = new RegExp(dateRegex.source + split.source + dateRegex.source);
 
 // Matches URLs and returns the following array structure:
@@ -50,6 +48,32 @@ const regexMap = {
   "{url}": urlRegex
 }
 
+function getDatesFromInterval(interval) {
+  var dd_mm_yyyy_regex = new RegExp(dd_mm_yyyy.source, dd_mm_yyyy.flags + 'g');
+  let dd_mm_yyyy_match = [...interval[0].matchAll(dd_mm_yyyy_regex)];
+  if (dd_mm_yyyy_match != null) {
+    let startDate = new Date(dd_mm_yyyy_match[0][3], dd_mm_yyyy_match[0][2] - 1, dd_mm_yyyy_match[0][1]);
+    let endDate = new Date(dd_mm_yyyy_match[1][3], dd_mm_yyyy_match[1][2] - 1, dd_mm_yyyy_match[1][1]);
+    return [startDate, endDate];
+  }
+
+  var mm_dd_yyyy_regex = new RegExp(mm_dd_yyyy.source, mm_dd_yyyy.flags + 'g');
+  let mm_dd_yyyy_match = [...interval[0].matchAll(mm_dd_yyyy_regex)];
+  if (mm_dd_yyyy_match != null) {
+    let startDate = new Date(mm_dd_yyyy_match[0][3] - 1, mm_dd_yyyy_match[0][1], mm_dd_yyyy_match[0][2]);
+    let endDate = new Date(mm_dd_yyyy_match[1][3] - 1, mm_dd_yyyy_match[1][1], mm_dd_yyyy_match[1][2]);
+    return [startDate, endDate];
+  }
+
+  var yyyy_mm_dd_regex = new RegExp(yyyy_mm_dd.source, yyyy_mm_dd.flags + 'g');
+  let yyyy_mm_dd_match = [...interval[0].matchAll(yyyy_mm_dd_regex)];
+  if (yyyy_mm_dd_match != null) {
+    let startDate = new Date(yyyy_mm_dd_match[0][1], yyyy_mm_dd_match[0][2] - 1, yyyy_mm_dd_match[0][3]);
+    let endDate = new Date(yyyy_mm_dd_match[1][1], yyyy_mm_dd_match[1][2] - 1, yyyy_mm_dd_match[1][3]);
+    return [startDate, endDate];
+  }
+}
+
 function escapeRegex(string) {
   return string.replace(/[-\/\\^$*+?.()|[\]]/g, '\\$&');
 }
@@ -57,6 +81,14 @@ function escapeRegex(string) {
 // Stores field & value pairs under the following structure:
 // e.g. `{key: "{fieldName}", value: "fieldValue"}`
 var extractedFields;
+
+function generateRegexFromPattern(regexString) {
+  // Replace globally, case insensitive.
+  var finalRegex = regexString.replace(/{email}|{user}|{date}|{interval}|{newLine}|{url}/gi, function (foundField) {
+    return regexMap[foundField].source;
+  });
+  return finalRegex;
+}
 
 // Returns special fields defined inside the `regexString` parameter that were found inside `bodyContent`.
 function bodyContains(bodyContent, regexString) {
@@ -153,14 +185,9 @@ function constructQueryString(request, requestPos, pathIdentification) {
       let requestNo = match[2];
       let paramLocation = match[3];
       let paramName = match[4];
-      // Find values in the body of previously sent requests.
-      if (paramLocation == 'body') { // e.g. `request0body=name`
-        if (requestNo < requestPos && requestNo >= 0) {
-          let bodyResponse = requestPaths[pathIdentification].requests[requestNo].response;
-        }
 
-        // Find param of previously sent requests.
-      } else if (paramLocation == 'param') { // e.g.  `request0body=name`
+      // Find param of previously sent requests.
+      if (paramLocation == 'param') { // e.g.  `request0param=name`
         let paramsOtherRequest = requestPaths[pathIdentification].requests[requestNo].params;
         paramsOtherRequest.forEach(function (param2) {
           if (param2.match(paramName + '=')) {
@@ -210,6 +237,14 @@ function followRequestPath(pathIdentification, requestNo, ev) {
       icon: "iconid",
       persistent: false
     });
+    if (sendExcelPostRequest() != null) {
+      Office.context.mailbox.item.notificationMessages.addAsync("Info", {
+        type: "informationalMessage",
+        message: "Excel action completed successfully.",
+        icon: "iconid",
+        persistent: false
+      });
+    }
     return;
   }
   xmlHttp.onreadystatechange = function () {
@@ -267,6 +302,19 @@ function resetUI() {
   document.getElementById("item-test").innerHTML = "";
   document.getElementById("title").innerText = "";
   document.getElementById("item-actions").innerHTML = "";
+}
+
+function sendExcelPostRequest() {
+  let dates = getDatesFromInterval(getFieldValue(extractedFields, "{interval}"));
+  let email = getFieldValue(extractedFields, "{email}")[0];
+  if (dates != null && email != null) {
+    var xhr = new XMLHttpRequest();
+
+    xhr.open("POST", "https://localhost:3000/updateExcel", true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    let json = JSON.stringify({ dates: dates, email: email });
+    xhr.send(json);
+  }
 }
 
 async function run() {

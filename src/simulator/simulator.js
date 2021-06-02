@@ -36,7 +36,7 @@ const intervalRegex = new RegExp(dateRegex.source + split.source + dateRegex.sou
 function getDatesFromInterval(interval) {
   var dd_mm_yyyy_regex = new RegExp(dd_mm_yyyy.source, dd_mm_yyyy.flags + 'g');
   let dd_mm_yyyy_match = [...interval[0].matchAll(dd_mm_yyyy_regex)];
-  if(dd_mm_yyyy_match != null) {
+  if (dd_mm_yyyy_match != null) {
     let startDate = new Date(dd_mm_yyyy_match[0][3], dd_mm_yyyy_match[0][2] - 1, dd_mm_yyyy_match[0][1]);
     let endDate = new Date(dd_mm_yyyy_match[1][3], dd_mm_yyyy_match[1][2] - 1, dd_mm_yyyy_match[1][1]);
     return [startDate, endDate];
@@ -44,7 +44,7 @@ function getDatesFromInterval(interval) {
 
   var mm_dd_yyyy_regex = new RegExp(mm_dd_yyyy.source, mm_dd_yyyy.flags + 'g');
   let mm_dd_yyyy_match = [...interval[0].matchAll(mm_dd_yyyy_regex)];
-  if(mm_dd_yyyy_match != null) {
+  if (mm_dd_yyyy_match != null) {
     let startDate = new Date(mm_dd_yyyy_match[0][3] - 1, mm_dd_yyyy_match[0][1], mm_dd_yyyy_match[0][2]);
     let endDate = new Date(mm_dd_yyyy_match[1][3] - 1, mm_dd_yyyy_match[1][1], mm_dd_yyyy_match[1][2]);
     return [startDate, endDate];
@@ -52,7 +52,7 @@ function getDatesFromInterval(interval) {
 
   var yyyy_mm_dd_regex = new RegExp(yyyy_mm_dd.source, yyyy_mm_dd.flags + 'g');
   let yyyy_mm_dd_match = [...interval[0].matchAll(yyyy_mm_dd_regex)];
-  if(yyyy_mm_dd_match != null) {
+  if (yyyy_mm_dd_match != null) {
     let startDate = new Date(yyyy_mm_dd_match[0][1], yyyy_mm_dd_match[0][2] - 1, yyyy_mm_dd_match[0][3]);
     let endDate = new Date(yyyy_mm_dd_match[1][1], yyyy_mm_dd_match[1][2] - 1, yyyy_mm_dd_match[1][3]);
     return [startDate, endDate];
@@ -185,14 +185,9 @@ function constructQueryString(request, requestPos, pathIdentification) {
       let requestNo = match[2];
       let paramLocation = match[3];
       let paramName = match[4];
-      // Find values in the body of previously sent requests.
-      if (paramLocation == 'body') { // e.g. `request0body=name`
-        if (requestNo < requestPos && requestNo >= 0) {
-          let bodyResponse = requestPaths[pathIdentification].requests[requestNo].response;
-        }
 
-        // Find param of previously sent requests.
-      } else if (paramLocation == 'param') { // e.g.  `request0body=name`
+      // Find param of previously sent requests.
+      if (paramLocation == 'param') { // e.g.  `request0param=name`
         let paramsOtherRequest = requestPaths[pathIdentification].requests[requestNo].params;
         paramsOtherRequest.forEach(function (param2) {
           if (param2.match(paramName + '=')) {
@@ -306,33 +301,39 @@ async function logRequestPath(pathIdentification) {
       "<br/>" + queryString + "<br/>";
     ++i;
   });
-  let dates = getDatesFromInterval(getFieldValue(extractedFields, "{interval}"));
-  let email = getFieldValue(extractedFields, "{email}")[0];
 
-  sendExcelPostRequest(dates, email);
+  if (sendExcelPostRequest() != null) {
+    Office.context.mailbox.item.notificationMessages.addAsync("Info", {
+      type: "informationalMessage",
+      message: "Excel action completed successfully.",
+      icon: "iconid",
+      persistent: false
+    });
+  }
 }
 
-function sendExcelPostRequest(dates, email) {
-  var xhr = new XMLHttpRequest();
-  
-  xhr.open("POST", "https://localhost:3000/updateExcel", true);
-  xhr.setRequestHeader('Content-Type', 'application/json');
-  let json = JSON.stringify({dates: dates, email: email});
-  xhr.send(json);
+function sendExcelPostRequest() {
+  let dates = getDatesFromInterval(getFieldValue(extractedFields, "{interval}"));
+  let email = getFieldValue(extractedFields, "{email}")[0];
+  if (dates != null && email != null) {
+    var xhr = new XMLHttpRequest();
+
+    xhr.open("POST", "https://localhost:3000/updateExcel", true);
+    xhr.setRequestHeader('Content-Type', 'application/json');
+    let json = JSON.stringify({ dates: dates, email: email });
+    xhr.send(json);
+  }
 }
 
 async function run() {
   // Get a reference to the current message
   var item = Office.context.mailbox.item;
-  // Write message property value to the task pane
   resetUI();
 
   let subject = document.getElementById("item-subject-input").value;
   let body = document.getElementById("item-body-input").value;
-  //document.getElementById("item-body").innerHTML = "<b>Body:</b> <br/>" + body;
 
   // Concatenate subject and email body into a single string.
-  // let content = subject + body;
   let content = subject + body;
   // Loop through each email template.
   for (const [key, value] of Object.entries(patterns.patterns[0])) {

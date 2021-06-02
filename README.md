@@ -82,13 +82,8 @@ Based on the JSON structure example given previously, the workflow is as follows
 Depending on the user's needs, special fields can also be added/modified:
 
 * Declare regex literal \for that specific field inside `src/taskpane/taskpane.js`.
-* Add it to the `regexMap` dictionary, inside `src/taskpane/taskpane.js` line 48.
-* Add the field to the replace function, inside `src/taskpane/taskpane.js` line 74.
+* Add it to the `regexMap` dictionary, inside `src/taskpane/taskpane.js` line 43.
+* Add the field to the replace function, inside `src/taskpane/taskpane.js` line 102.
 
-
-# TODO:
-* Add field in the config file that identifies functions that need to be executed on action match.
-* Error handling for the config file content.
-* Logic behind the excel action.
-* Benchmark regexes inside the simulator.
-* Security problem with the buffer taken from the POST request.
+In our particular case, after successfully sending every HTTP request we take both the `email` and `interval` fields extracted from the email subject and update the excel file, whose path is defined in the `config.json` file.
+We search for the email on the first column of the excel file and update that specific line according to the given interval by marking each cell in that timespan.
