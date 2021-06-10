@@ -8,7 +8,6 @@
   <Description DefaultValue="Outlook email processor."/>
   <IconUrl DefaultValue="https://localhost:3000/icon-64.png"/>
   <HighResolutionIconUrl DefaultValue="https://localhost:3000/icon-128.png"/>
-  <SupportUrl DefaultValue="https://contoso.com/"/>
   <AppDomains>
     <AppDomain>localhost</AppDomain>
   </AppDomains>
@@ -31,7 +30,6 @@
   <Permissions>ReadWriteItem</Permissions>
   <Rule xsi:type="RuleCollection" Mode="And">
     <Rule xsi:type="ItemIs" ItemType="Message" FormType="Read" />
-    <!-- <Rule xsi:type="ItemHasRegularExpressionMatch" RegExValue="moiseanurares@gmail.com" RegExName="addressMatches" PropertyName="SMTPAddress" /> -->
   </Rule>
   <DisableEntityHighlighting>false</DisableEntityHighlighting>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/mailappversionoverrides" xsi:type="VersionOverridesV1_0">

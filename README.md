@@ -12,6 +12,7 @@ This add-in allows the user to extract specific fields from an email based on co
 ```shell
 > Clone/Download the repository.
 > Run `npm install` to install npm dependencies.
+> Update domain names accordingly inside `manifest.xml`.
 > Run `npm start` to launch the server.
 > Outlook Web:
 >   Select a random message.

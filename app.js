@@ -74,8 +74,13 @@ async function startServer(port) {
         const options = await devCerts.getHttpsServerOptions();
         https.createServer(options, app).listen(port, () => console.log(`Server running on ${port}`));
     }
-    else {
-        app.listen(config.port || 3000, () => console.log(`Server listening on port 3000`));
+    else if (config.environment == 'production') {
+        https.createServer({
+            key: fs.readFileSync('server.key'),
+            cert: fs.readFileSync('server.cert')
+        }, app).listen(config.port || 3000, () => console.log(`Server listening on port ${config.port || 3000}`));
+    } else {
+        console.log('Invalid environment.');
     }
 }
 
